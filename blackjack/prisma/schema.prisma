@@ -12,38 +12,48 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  chips     Int      @default(250)   // starting balance
-  games     Game[]
+  id    String  @id @default(cuid())
+  email String  @unique
+  name  String?
+  image String?
+  chips Int     @default(250) // starting balance
+
+  games            Game[]
+  chipTransactions ChipTransaction[] // <-- add this line
+
   createdAt DateTime @default(now())
 }
 
 model Game {
-  id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  bet        Int
-  result     GameResult        // 'Win' | 'Lose' | 'Push' | 'Blackjack'
-  userScore  Int
+  id          String     @id @default(cuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String
+  bet         Int
+  result      GameResult // 'Win' | 'Lose' | 'Push' | 'Blackjack'
+  userScore   Int
   dealerScore Int
   // optional for audits:
-  finalState Json
-  createdAt  DateTime @default(now())
+  finalState  Json
+  createdAt   DateTime   @default(now())
 }
 
-enum GameResult { Win Lose Push Blackjack }
+enum GameResult {
+  Win
+  Lose
+  Push
+  Blackjack
+}
+// ← this MUST be here
 
 model ChipTransaction {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  delta     Int                  // +100 (win), -100 (bet placed/lost), etc.
+  delta     Int // +100 (win), -100 (bet placed/lost), etc.
   reason    String
   createdAt DateTime @default(now())
 }
