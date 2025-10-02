@@ -1,7 +1,8 @@
-export default function PlayingCard({ symbol }: { symbol: string }) {
+// components/Card.tsx
+export default function PlayingCard({ value }: { value?: string }) {
   return (
-    <div className="bg-white text-black rounded-md p-4 text-2xl w-16 h-24 flex items-center justify-center shadow">
-      {symbol}
+    <div className="w-[60px] h-[90px] border-2 border-white rounded-lg bg-gray-900 flex items-center justify-center text-lg font-semibold">
+      {value || ""}
     </div>
   );
 }
