@@ -20,8 +20,8 @@ export default function HomePage() {
   const [flipped, setFlipped] = useState([false, false, false, false]); // 4 cards
   const [controlsVisible, setControlsVisible] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [playerCards, setPlayerCards] = useState<string[]>([]);
-  const [dealerCards, setDealerCards] = useState<string[]>([]);
+  const [playerCards, setPlayerCards] = useState<string[]>(["Hidden", "Hidden"]);
+  const [dealerCards, setDealerCards] = useState<string[]>(["Hidden", "Hidden"]);
   const [status, setStatus] = useState('');
   
   const handleBet = (amount: number) => {
@@ -65,9 +65,8 @@ export default function HomePage() {
 
 
   const startGame = () => {
-    const playerCards = [getRandomCard(), getRandomCard()]
-    const dealerCards = [getRandomCard(), getRandomCard()]
-    setDealerCards(['Q♣', 'Hidden']);
+    setPlayerCards([getRandomCard(), getRandomCard()])
+    setDealerCards([getRandomCard(), getRandomCard()])
     setGameStarted(true);
 
       // Sequential flip animation
@@ -79,7 +78,12 @@ export default function HomePage() {
   };
 
   const handleHit = () => {
-    
+    setPlayerCards([...playerCards, getRandomCard()])
+    setFlipped([...flipped, true])
+    if(calculateHandValue(playerCards) > 21){
+      setStatus('Win!');
+      handleNewGame()
+    }
   };
 
   const handleStand = () => {
@@ -96,26 +100,50 @@ export default function HomePage() {
     setStatus('');
   };
 
+
   return (
     <div className="p-6">
       <Balance balance={balance} />
       <BetControls bet={bet} setBet={setBet} />
       
     <div className="flex flex-col items-center my-8">
-      <div className="flex gap-4 mb-2">
-        <PlayingCard value={dealerCards[0]} flipped={flipped[1]} />
-        <PlayingCard value="Hidden" flipped={flipped[3]} /> {/* face-down */}
+        <div className="flex gap-4 mb-2">
+          <PlayingCard value={dealerCards[0]} flipped={flipped[1]} />
+          <PlayingCard value="Hidden" flipped={flipped[3]} /> {/* face-down */}
+        </div>
+        <span>Dealer</span>
       </div>
-      <span>Dealer</span>
-    </div>
 
     <div className="flex flex-col items-center my-8">
-      <div className="flex gap-4 mb-2">
-        <PlayingCard value={playerCards[0]} flipped={flipped[0]} />
-        <PlayingCard value={playerCards[1]} flipped={flipped[2]} />
+      <div className="relative w-[200px] h-[80px]">
+        {playerCards.map((card, idx) => {
+          const baseClass = "absolute transition-all duration-300";
+          
+          // Logic for positioning cards
+          let positionStyle = "";
+
+          if (playerCards.length === 2) {
+            if (idx === 0) positionStyle = `left-[25%] translate-x-[-50%]`; // first card
+            if (idx === 1) positionStyle = `left-[75%] translate-x-[-50%]`; // second card
+          }
+          if (playerCards.length === 3) {
+            if (idx === 0) positionStyle = `left-[0%] translate-x-[-50%]`; // first
+            if (idx === 1) positionStyle = `left-[50%] translate-x-[-50%]`; // second
+            if (idx === 2) positionStyle = `left-[100%] translate-x-[-50%]`; // third
+          }
+          console.log("Rendering player card:", idx, card, flipped[idx * 2]);
+          return (
+            <div key={idx} className={`${baseClass} ${positionStyle}`}>
+              <PlayingCard value={card} flipped={flipped[idx * 2]} />
+            </div>
+          );
+        })}
       </div>
       <span>You</span>
     </div>
+
+
+
       {bet > 0 && !gameStarted && (
         <div className="flex justify-center mt-4">
           <button
