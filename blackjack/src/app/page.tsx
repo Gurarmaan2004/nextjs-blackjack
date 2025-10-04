@@ -17,6 +17,8 @@ export default function HomePage() {
   const [balance, setBalance] = useState(250);
   const [bet, setBet] = useState(0);
   
+  const [flipped, setFlipped] = useState([false, false, false, false]); // 4 cards
+  const [controlsVisible, setControlsVisible] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [playerCards, setPlayerCards] = useState<string[]>([]);
   const [dealerCards, setDealerCards] = useState<string[]>([]);
@@ -29,16 +31,55 @@ export default function HomePage() {
     }
   };
 
+  const getRandomCard = (): string => {
+    const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    const suits = ['♠', '♥', '♦', '♣'];
+    const rank = ranks[Math.floor(Math.random() * ranks.length)];
+    const suit = suits[Math.floor(Math.random() * suits.length)];
+    return `${rank}${suit}`;
+  };
+  const calculateHandValue = (cards: string[]): number => {
+    let total = 0;
+    let aces = 0;
+
+    for (const card of cards) {
+      const rank = card.slice(0, -1); // get rid of suit
+      if (['J', 'Q', 'K'].includes(rank)) total += 10;
+      else if (rank === 'A') {
+        total += 11;
+        aces += 1;
+      } else {
+        total += parseInt(rank);
+      }
+    }
+
+    while (total > 21 && aces > 0) {
+      total -= 10; // convert an Ace from 11 to 1
+      aces--;
+    }
+
+    return total;
+  };
+
+
+
+
   const startGame = () => {
-    setPlayerCards(['K♠', '7♦']);
+    const playerCards = [getRandomCard(), getRandomCard()]
+    const dealerCards = [getRandomCard(), getRandomCard()]
     setDealerCards(['Q♣', 'Hidden']);
     setGameStarted(true);
 
+      // Sequential flip animation
+    setTimeout(() => setFlipped([true, false, false, false]), 500);      // Player 1
+    setTimeout(() => setFlipped([true, true, false, false]), 1000);      // Dealer 1
+    setTimeout(() => setFlipped([true, true, true, false]), 1500);       // Player 2
+    setTimeout(() => setControlsVisible(true), 2000);             // Show actions
 
   };
 
   const handleHit = () => {
-    setPlayerCards(prev => [...prev, '2♣']);
+    
   };
 
   const handleStand = () => {
@@ -51,6 +92,7 @@ export default function HomePage() {
     setGameStarted(false);
     setPlayerCards([]);
     setDealerCards([]);
+    setFlipped([false, false, false, false])
     setStatus('');
   };
 
@@ -59,19 +101,18 @@ export default function HomePage() {
       <Balance balance={balance} />
       <BetControls bet={bet} setBet={setBet} />
       
-
-      <div className="flex flex-col items-center my-8">
+    <div className="flex flex-col items-center my-8">
       <div className="flex gap-4 mb-2">
-        <PlayingCard />
-        <PlayingCard />
+        <PlayingCard value={dealerCards[0]} flipped={flipped[1]} />
+        <PlayingCard value="Hidden" flipped={flipped[3]} /> {/* face-down */}
       </div>
       <span>Dealer</span>
     </div>
 
     <div className="flex flex-col items-center my-8">
       <div className="flex gap-4 mb-2">
-        <PlayingCard />
-        <PlayingCard />
+        <PlayingCard value={playerCards[0]} flipped={flipped[0]} />
+        <PlayingCard value={playerCards[1]} flipped={flipped[2]} />
       </div>
       <span>You</span>
     </div>
@@ -85,17 +126,15 @@ export default function HomePage() {
           </button>
         </div>
       )}
-      {gameStarted && (
-        <>
-          <GameTable dealerCards={dealerCards} playerCards={playerCards} status={status} />
+        {gameStarted && controlsVisible && (
           <GameActions
             onHit={handleHit}
             onStand={handleStand}
             onNewGame={handleNewGame}
             isGameOver={!!status}
           />
-        </>
-      )}
+        )}
+
     </div>
   );
 }
