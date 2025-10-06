@@ -137,3 +137,7 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

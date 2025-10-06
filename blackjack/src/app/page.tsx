@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BetControls from "../components/ui/BetControls";
 import Balance from "../components/ui/Balance";
 import Hand from "../components/ui/Hand";
@@ -9,7 +9,7 @@ import PlayingCard from "../components/ui/PlayingCard";
 import PlayerLabel from "../components/ui/PlayerLabelProps";
 
 import GameActions from "../components/ui/GameActions";
-
+import './globals.css'
 
 // import ResultBanner from "../components/ui/ResultBanner";
 import ActionButtons from "../components/ui/ActionButtons";
@@ -30,12 +30,37 @@ export default function HomePage() {
 
   const [status, setStatus] = useState('');
   
-  const handleBet = (amount: number) => {
-    if (balance >= amount && !gameStarted) {
-      setBet(bet + amount);
-      setBalance(balance - amount);
+
+  useEffect(() => {
+    async function fetchBalance() {
+      const res = await fetch('/api/balance/get', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: "mock-user-id" })
+      });
+      const data = await res.json();
+      setBalance(data.balance);
     }
-  };
+
+    fetchBalance();
+  }, []);
+  const handleBet = async (amount: number) => {
+  if (balance >= amount && !gameStarted) {
+    setBet(bet + amount);
+    setBalance(balance - amount);
+
+    // Backend: Log chip deduction
+    await fetch('/api/balance/update', {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "mock-user-id",  // Replace this with actual user ID from session/auth
+        delta: -amount,
+        reason: "Bet Placed"
+      })
+    });
+  }
+};
 
   const getRandomCard = (): string => {
     const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -128,7 +153,7 @@ export default function HomePage() {
   }, 2000);
 };
 
-const handleDealerTurn = (currentPlayerCards: string[]) => {
+const handleDealerTurn = async (currentPlayerCards: string[]) => {
   // work with local copies so we don't rely on stale React state
   let currentDealerCards = [...dealerCards];
   let currentScore = calculateHandValue(currentDealerCards);
@@ -167,11 +192,48 @@ const handleDealerTurn = (currentPlayerCards: string[]) => {
     }
     setGameOver(true);
   }
+
   , 1000); // delay outcome until after animations finish
+
+  // determine delta payout
+  let payout = 0;
+  if (status === "Win") payout = bet * 2;
+  if (status === "Push") payout = bet;
+
+  // Update balance if needed
+  if (payout > 0) {
+    await fetch('/api/balance/update', {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "mock-user-id",
+        delta: payout,
+        reason: status === "Push" ? "Push - Refund" : "Won Game"
+      })
+    });
+    setBalance(prev => prev + payout);
+  }
+
+  // Save Game Result
+  await fetch('/api/game/save', {
+    method: 'POST',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: "mock-user-id",
+      bet,
+      result: status,
+      userScore: calculateHandValue(currentPlayerCards),
+      dealerScore: currentScore,
+      finalState: {
+        playerCards: currentPlayerCards,
+        dealerCards
+      }
+    })
+  });
 };
 
 
-  const handleHit = () => {
+  const handleHit = async () => {
     const newPlayerCards = [...playerCards, getRandomCard()]
     setPlayerCards(newPlayerCards)
 
@@ -182,11 +244,11 @@ const handleDealerTurn = (currentPlayerCards: string[]) => {
       handleNewGame()
     }
 
-    handleDealerTurn(newPlayerCards)
+    await handleDealerTurn(newPlayerCards)
   };
 
-  const handleStand = () => {
-    handleDealerTurn(playerCards);
+  const handleStand = async () => {
+    await handleDealerTurn(playerCards);
   };
 
   const handleNewGame = () => {
@@ -205,38 +267,40 @@ const handleDealerTurn = (currentPlayerCards: string[]) => {
   return (
     <div className="p-6">
       <Balance balance={balance} />
-      <BetControls bet={bet} setBet={setBet} />
-      
     <div className="flex flex-col items-center my-8">
-      <div className="relative w-[200px] h-[80px]"></div>
-        {dealerCards.map((card, idx) => {
-          const baseClass = "absolute transition-all duration-300";
-          
-          // Logic for positioning cards
-          let positionStyle = "";
+  {/* Container for dealer cards */}
+  <div className="relative w-[200px] h-[80px] mb-14">
+    {dealerCards.map((card, idx) => {
+      const baseClass = "absolute transition-all duration-300";
 
-          if (dealerCards.length === 2) {
-            if (idx === 0) positionStyle = `left-[25%] translate-x-[-50%]`; // first card
-            if (idx === 1) positionStyle = `left-[75%] translate-x-[-50%]`; // second card
-          }
-          if (dealerCards.length === 3) {
-            if (idx === 0) positionStyle = `left-[0%] translate-x-[-50%]`; // first
-            if (idx === 1) positionStyle = `left-[50%] translate-x-[-50%]`; // second
-            if (idx === 2) positionStyle = `left-[100%] translate-x-[-50%]`; // third
-          }
-          console.log("Rendering player card:", idx, card, flipped[idx * 2]);
-          return (
-            <div key={idx} className={`${baseClass} ${positionStyle}`}>
-              <PlayingCard value={card} flipped={flipped[idx*2+1]} />
-            </div>
-          );
-        })};
-          <PlayerLabel
-            role="Dealer"
-            score={dealerScore}
-            outcome= {undefined}
-          />
-      </div>
+      // Logic for positioning cards
+      let positionStyle = "";
+      if (dealerCards.length === 2) {
+        if (idx === 0) positionStyle = `left-[25%] translate-x-[-50%]`; // first card
+        if (idx === 1) positionStyle = `left-[75%] translate-x-[-50%]`; // second card
+      }
+      if (dealerCards.length === 3) {
+        if (idx === 0) positionStyle = `left-[0%] translate-x-[-50%]`; // first
+        if (idx === 1) positionStyle = `left-[50%] translate-x-[-50%]`; // second
+        if (idx === 2) positionStyle = `left-[100%] translate-x-[-50%]`; // third
+      }
+
+      return (
+        <div key={idx} className={`${baseClass} ${positionStyle}`}>
+          <PlayingCard value={card} flipped={flipped[idx * 2 + 1]} />
+        </div>
+      );
+    })}
+  </div>
+
+  {/* Dealer Label */}
+  <PlayerLabel
+    role="Dealer"
+    score={dealerScore}
+    outcome={undefined}
+  />
+</div>
+
     <div className="flex flex-col items-center my-8">
       <div className="relative w-[200px] h-[80px] mb-14">
         {playerCards.map((card, idx) => {
@@ -269,18 +333,6 @@ const handleDealerTurn = (currentPlayerCards: string[]) => {
           />
     </div>
 
-
-
-      {bet > 0 && !gameStarted && (
-        <div className="flex justify-center mt-4">
-          <button
-            onClick={startGame}
-            className="bg-yellow-500 text-black px-6 py-2 rounded"
-          >
-            Deal
-          </button>
-        </div>
-      )}
         {gameStarted && controlsVisible && (
           <GameActions
             onHit={handleHit}
@@ -290,6 +342,22 @@ const handleDealerTurn = (currentPlayerCards: string[]) => {
           />
         )}
 
+
+      {!gameStarted && (
+        <BetControls bet={bet} setBet={setBet} onPlaceBet={() => handleBet(bet)} />
+      )}
+
+
+      {bet > 0 && !gameStarted && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={startGame}
+            className="w-40 py-3 bg-white text-black rounded hover:bg-gray-300 transition"
+          >
+            Place Bet
+          </button>
+        </div>
+      )}
     </div>
   );
 }
