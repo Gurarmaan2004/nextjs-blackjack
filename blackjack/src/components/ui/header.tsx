@@ -1,6 +1,7 @@
 // components/Header.tsx
 import Link from "next/link";
 
+import ThemeToggle from "./ThemeToggle";
 export default function Header({ balance = 250 }) {
   return (
     <div className="w-full flex justify-between items-center px-6 py-4 bg-black text-white">
@@ -13,9 +14,9 @@ export default function Header({ balance = 250 }) {
       </div>
       <nav className="flex items-center gap-6 text-sm">
         <Link href="/">Home</Link>
-        <Link href="/history">History</Link>
+        <Link href="/gamehistory">History</Link>
         <button className="hover:underline">Logout</button>
-        <button className="bg-gray-800 p-1 rounded-full">🌙</button>
+        <ThemeToggle/>
       </nav>
     </div>
   );
