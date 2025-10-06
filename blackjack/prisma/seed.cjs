@@ -1,9 +1,11 @@
-const { PrismaClient } = require('../src/generated/prisma'); // ✅ correct path
+const { PrismaClient } = require('../src/generated/prisma'); // ✅ correct path const prisma = new PrismaClient();
 const prisma = new PrismaClient();
 
 async function main() {
-  const user = await prisma.user.create({
-    data: {
+  const user = await prisma.user.upsert({
+    where: { email: 'test@example.com' },
+    update: {}, // do nothing if exists
+    create: {
       email: 'test@example.com',
       name: 'Test User',
       chips: 500,
@@ -17,7 +19,10 @@ async function main() {
       userScore: 18,
       dealerScore: 20,
       result: 'Lose',
-      finalState: {},
+      finalState: {
+        playerCards: ['9♠', '9♦'],
+        dealerCards: ['10♣', 'Q♥'],
+      },
     },
   });
 
