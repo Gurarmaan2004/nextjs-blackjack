@@ -22,7 +22,6 @@ export default function HomePage() {
   const { balance, setBalance } = useBalance(); // use from context only
   const [bet, setBet] = useState(0);
   
-  // const [flipped, setFlipped] = useState([false, false, false, false]); // 4 cards
 
   const [playerFlipped, setPlayerFlipped] = useState<boolean[]>([false, false]);
   const [dealerFlipped, setDealerFlipped] = useState<boolean[]>([false, false]);
@@ -39,31 +38,36 @@ export default function HomePage() {
 
   const [status, setStatus] = useState('');
 
-  // const userId = getOrCreateGuestId();
 
 
 useEffect(() => {
-    const initUser = async () => {
-      const res = await fetch('/api/user/guest');
-      const data = await res.json();
-      console.log(data)
-      if (data.guestId) {
-        console.log(data.guestId);
-        setUserId(data.guestId);
+  const initUser = async () => {
+    const saved = localStorage.getItem("guestId");
+    if (saved) {
+      setUserId(saved);
+      return;
+    }
 
-        // Fetch balance with guestId
-        const balanceRes = await fetch('/api/balance/get', {
-          method: 'POST',
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.guestId }),
-        });
-        const balanceData = await balanceRes.json();
-        setBalance(balanceData.chips);
-      }
-    };
-    initUser();
-  }, []);
+    const res = await fetch('/api/user/guest');
+    const data = await res.json();
 
+    if (data.guestId) {
+      localStorage.setItem("guestId", data.guestId);
+      setUserId(data.guestId);
+
+      const balanceRes = await fetch('/api/balance/get', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: data.guestId }),
+      });
+
+      const balanceData = await balanceRes.json();
+      setBalance(balanceData.chips);
+    }
+  };
+
+  initUser();
+}, []);
   const handleBet = async (amount: number) => {
     if (balance >= amount && !gameStarted) {
       setBalance(balance - amount); // or however your logic computes it;
