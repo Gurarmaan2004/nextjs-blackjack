@@ -31,14 +31,22 @@ export default function GameHistoryItem({ game }: { game: GameRecord }) {
           </p>
         </div>
         <div>
-          <p className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs mb-1">Result</p>
-          <p className={`font-semibold ${resultColor}`}>
-            {game.result}
-            {game.payout > 0 && (
-              <span className="text-green-400 dark:text-green-300"> (+{game.payout})</span>
-            )}
-          </p>
-        </div>
+            <p className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs mb-1">Result</p>
+            <p className={`font-semibold ${resultColor}`}>
+                {game.result}
+                {game.payout !== 0 && (
+                <span className={
+                    game.result === "Push"
+                    ? "text-red-400 dark:text-yellow-300"
+                    : game.payout > 0
+                    ? "text-green-400 dark:text-green-300"
+                    : "text-red-400 dark:text-red-300"
+                }>
+                    {` (${game.payout > 0 ? '+' : ''}${game.payout})`}
+                </span>
+                )}
+            </p>
+            </div>
       </div>
     </div>
   );
