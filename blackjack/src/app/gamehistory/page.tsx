@@ -52,6 +52,19 @@ export default function GameHistoryPage() {
     initUser();
   }, []);
 
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("gameHistory");
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem("gameHistory", JSON.stringify(history));
+    }
+  }, [history]);
+
   function formatDate(timestamp: string): string {
     const date = new Date(timestamp);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;

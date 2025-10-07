@@ -4,38 +4,41 @@ interface GameRecord {
   playerScore: number;
   dealerScore: number;
   result: string;
-  payout: number
+  payout: number;
 }
 
 export default function GameHistoryItem({ game }: { game: GameRecord }) {
-  const resultColor = game.result.includes('Win') || game.result.includes('Blackjack')
-    ? 'text-green-400'
-    : 'text-red-400';
+  const resultColor =
+    game.result.includes("Win") || game.result.includes("Blackjack")
+      ? "text-green-400"
+      : "text-red-400";
 
   return (
-    <div className="flex justify-between items-center bg-black border border-gray-700 p-4 rounded-lg">
-      <div>
-        <p className="text-sm text-gray-400">Date</p>
-        <p className="font-semibold">{game.date}</p>
-      </div>
-      <div>
-        <p className="text-sm text-gray-400">Bet</p>
-        <p className="font-semibold">{game.bet} chips</p>
-      </div>
-      <div>
-        <p className="text-sm text-gray-400">Score</p>
-        <p className="font-semibold">
-          You: {game.playerScore} | Dealer: {game.dealerScore}
-        </p>
-      </div>
-      <div>
-        <p className="text-sm text-gray-400">Result</p>
-        <p className={`font-semibold ${resultColor}`}>
+    <div className="bg-white dark:bg-black border border-gray-300 dark:border-gray-700 p-4 rounded-lg shadow-sm">
+      <div className="grid grid-cols-4 gap-4 text-sm">
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs mb-1">Date</p>
+          <p className="text-gray-800 dark:text-gray-200">{game.date}</p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs mb-1">Bet</p>
+          <p className="text-gray-800 dark:text-gray-200">{game.bet} chips</p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs mb-1">Score</p>
+          <p className="text-gray-800 dark:text-gray-200">
+            You: {game.playerScore} | Dealer: {game.dealerScore}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs mb-1">Result</p>
+          <p className={`font-semibold ${resultColor}`}>
             {game.result}
             {game.payout > 0 && (
-                <span className="text-green-500"> (+{game.payout})</span>
+              <span className="text-green-400 dark:text-green-300"> (+{game.payout})</span>
             )}
-            </p>
+          </p>
+        </div>
       </div>
     </div>
   );
