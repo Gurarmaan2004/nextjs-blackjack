@@ -1,22 +1,18 @@
-// src/app/api/user/guest/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
-
-  const cookieStore = cookies(); // treat as any  
-  
-  const response = NextResponse.next(); // ✅ Needed for setting cookies
-
+  const cookieStore = cookies();  
+  const response = NextResponse.json({}); // Start with JSON response
   const supabase = createClient(cookieStore, response);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   let guestId = cookieStore.get("guestId")?.value;
 
   if (!guestId) {
     guestId = crypto.randomUUID();
+
     response.cookies.set("guestId", guestId, {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
@@ -33,5 +29,6 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ guestId });
+  // ✅ Attach guestId to response and return it
+  return NextResponse.json({ guestId }, { headers: response.headers });
 }
