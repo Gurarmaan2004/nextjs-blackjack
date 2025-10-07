@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   // 🔹 Parse userId from body
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Missing userId' }, { status: 400 });
   }
-
+n
   // 🔹 Query User by ID
   const { data, error } = await supabase
     .from('User')

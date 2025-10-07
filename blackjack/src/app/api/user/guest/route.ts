@@ -4,17 +4,19 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
-  const cookieStore = await cookies();
-  let Id = cookieStore.get("guestId")?.value;
-  const supabase = createClient(cookieStore);
+  const cookieStore = cookies(); // ✅ REMOVE await
+  const response = NextResponse.next(); // ✅ Needed for setting cookies
 
-  if (!Id) {
-    Id = crypto.randomUUID();
-    cookieStore.set("guestId", Id, {
+  const supabase = createClient(cookieStore, response);
+
+  let guestId = cookieStore.get("guestId")?.value;
+
+  if (!guestId) {
+    guestId = crypto.randomUUID();
+    response.cookies.set("guestId", guestId, {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
-  const guestId: string = Id;
 
     const { error } = await supabase.from("User").insert({
       id: guestId,
@@ -26,6 +28,6 @@ export async function GET() {
       return NextResponse.json({ error: "Could not create guest" }, { status: 500 });
     }
   }
-  const guestId: string = Id;
+
   return NextResponse.json({ guestId });
 }
