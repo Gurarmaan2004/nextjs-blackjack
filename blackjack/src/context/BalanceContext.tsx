@@ -99,7 +99,9 @@ export const BalanceProvider = ({ children }: { children: React.ReactNode }) => 
         body: JSON.stringify({ userId: guestId }),
       });
       const balanceData = await balanceRes.json();
-      setBalance(balanceData.chips);
+      if (balance !== undefined){
+        setBalance(balanceData.chips);
+      }
 
       // store in localStorage for next reload
       localStorage.setItem("balance", balanceData.chips);
@@ -108,11 +110,11 @@ export const BalanceProvider = ({ children }: { children: React.ReactNode }) => 
     initUser();
   }, []);
 
-  // Whenever balance changes, update localStorage
     useEffect(() => {
-    localStorage.setItem("balance", balance.toString());
+    if (typeof window !== "undefined" && typeof balance === "number") {
+        localStorage.setItem("balance", balance.toString());
+    }
     }, [balance]);
-
   return (
     <BalanceContext.Provider value={{ balance, setBalance }}>
       {children}

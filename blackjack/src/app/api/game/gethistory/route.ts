@@ -15,6 +15,7 @@ export async function POST(req: Request) {
   }
 
   // 🔹 Query User by ID
+  console.log("USER ID, ", userId)
   const { data, error } = await supabase
     .from('Game')
     .select('*')
