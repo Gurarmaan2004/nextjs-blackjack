@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// import { getGameHistory } from '@/lib/historyUtils'; // You'll implement this
 import GameHistoryItem from '@/components/ui/GameHistoryItem';
+import { getPaginationRange } from '@/utils/pagination';
+import { useTheme } from 'next-themes'; // if using next-themes
 
 interface GameRecord {
   date: string;
-  bet: number
+  bet: number;
   playerScore: number;
   dealerScore: number;
   result: string;
@@ -14,62 +15,51 @@ interface GameRecord {
 }
 
 export default function GameHistoryPage() {
-    const [userId, setUserId] = useState<string | null>(null);
-  const [gameData, setGameData] = useState<[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [history, setHistory] = useState<GameRecord[]>([]);
   const [page, setPage] = useState(1);
   const perPage = 5;
 
-  
-useEffect(() => {
+  const start = (page - 1) * perPage;
+  const paginated = history.slice(start, start + perPage);
+  const totalPages = Math.ceil(history.length / perPage);
+  const pageNumbers = getPaginationRange(page, totalPages);
+
+  useEffect(() => {
     const initUser = async () => {
       const res = await fetch('/api/user/guest');
       const data = await res.json();
       if (data.guestId) {
-        console.log(data.guestId);
         setUserId(data.guestId);
 
-        // Fetch balance with guestId
         const gameRes = await fetch('/api/game/gethistory', {
           method: 'POST',
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: data.guestId }),
         });
         const gameData = await gameRes.json();
-        console.log(gameData)
         setHistory(
           gameData.data.map((game: any) => ({
-            date: formatDate(game.createdAt), // Format the timestamp
+            date: formatDate(game.createdAt),
             playerScore: game.userScore,
             dealerScore: game.dealerScore,
             result: game.result,
-            payout: game.payout ?? 0, // default to 0 if null
+            payout: game.payout ?? 0,
             bet: game.bet
           }))
         );
-        console.log(gameData)
-        
       }
     };
     initUser();
   }, []);
-  const start = (page - 1) * perPage;
-  const paginated = history.slice(start, start + perPage);
-  const totalPages = Math.ceil(history.length / perPage);
-
 
   function formatDate(timestamp: string): string {
     const date = new Date(timestamp);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 text-white">
+    <div className="max-w-4xl mx-auto p-6 text-gray-900 dark:text-white">
       <h1 className="text-3xl font-bold mb-6">Game History</h1>
 
       <div className="space-y-4">
@@ -78,26 +68,41 @@ useEffect(() => {
         ))}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination UI */}
       <div className="flex justify-center items-center mt-6 gap-2">
         <button
-          className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700"
-          onClick={() => setPage(p => Math.max(1, p - 1))}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page === 1}
+          className="w-8 h-8 flex items-center justify-center rounded border border-gray-600 dark:border-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-40"
         >
-          ←
+          &lt;
         </button>
-        <span className="px-4 py-2">{page} / {totalPages}</span>
+
+        {pageNumbers.map((num, idx) => (
+          <button
+            key={idx}
+            disabled={num === "..."}
+            onClick={() => typeof num === 'number' && setPage(num)}
+            className={`w-8 h-8 flex items-center justify-center rounded border
+              ${num === page
+                ? "bg-white text-black dark:bg-white dark:text-black"
+                : "bg-black text-white dark:bg-gray-800 dark:text-white hover:bg-gray-700"
+              }`}
+          >
+            {num}
+          </button>
+        ))}
+
         <button
-          className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700"
-          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           disabled={page === totalPages}
+          className="w-8 h-8 flex items-center justify-center rounded border border-gray-600 dark:border-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-40"
         >
-          →
+          &gt;
         </button>
       </div>
 
-      <p className="mt-2 text-sm text-center text-gray-400">
+      <p className="mt-2 text-sm text-center text-gray-400 dark:text-gray-500">
         Showing {start + 1}–{Math.min(start + perPage, history.length)} of {history.length} games
       </p>
     </div>

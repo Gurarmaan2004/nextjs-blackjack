@@ -3,11 +3,13 @@ export default function GameActions({
   onHit,
   onStand,
   onNewGame,
+  onAIRecc,
   isGameOver
 }: {
   onHit: () => void;
   onStand: () => void;
   onNewGame: () => void;
+  onAIRecc: () => void;
   isGameOver: boolean;
 }) {
     
@@ -21,6 +23,9 @@ export default function GameActions({
         <>
           <button onClick={onHit} className="bg-blue-600 px-4 py-2 rounded text-white">
             Hit
+          </button>
+            <button onClick={onAIRecc} className="bg-blue-600 px-4 py-2 rounded text-white">
+            ?
           </button>
           <button onClick={onStand} className="bg-red-600 px-4 py-2 rounded text-white">
             Stand

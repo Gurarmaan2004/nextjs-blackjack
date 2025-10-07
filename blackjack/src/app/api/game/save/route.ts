@@ -4,7 +4,8 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const { userId, bet, result, userScore, dealerScore } = await req.json();
+  const { userId, bet, result, userScore, dealerScore, payout } = await req.json();
+  console.log(userId);
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
         result,
         userScore,
         dealerScore,
+        payout
       },
     ])
     .select();

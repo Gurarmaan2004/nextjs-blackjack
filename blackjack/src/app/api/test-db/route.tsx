@@ -4,15 +4,25 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
+  const userId = "290abf08-8645-4852-9268-3adb1d9afdfc"
+  const newBalance = 255;
+  console.log(newBalance, "new balance")
   const cookieStore = await cookies(); // ✅ await it
 
   const supabase = createClient(cookieStore);
+  
+//   const newData = {
+//       chips: { increment: delta }
+//     }
+    const { error: updateError } = await supabase
+    .from("User")
+    .update({ chips: newBalance })
+    .eq("id", userId);
 
-  const { data: users, error } = await supabase.from('Game').select('*').limit(1);
+    if (updateError) {
+    return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
+    }
 
-  if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true, users });
+    return NextResponse.json({ success: true, newBalance });
 }
+

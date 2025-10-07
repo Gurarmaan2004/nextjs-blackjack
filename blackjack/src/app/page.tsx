@@ -36,33 +36,34 @@ export default function HomePage() {
   const [dealerScore, setDealerScore] = useState(0);
 
   const [recommendedAction, setRecommendedAction] = useState<string | null>(null);
+  const [isFetchingRecommendation, setIsFetchingRecommendation] = useState(false);
 
   const [status, setStatus] = useState('');
 
   // const userId = getOrCreateGuestId();
 
 
-// useEffect(() => {
-//     const initUser = async () => {
-//       const res = await fetch('/api/user/guest');
-//       const data = await res.json();
-//       console.log(data)
-//       if (data.guestId) {
-//         console.log(data.guestId);
-//         setUserId(data.guestId);
+useEffect(() => {
+    const initUser = async () => {
+      const res = await fetch('/api/user/guest');
+      const data = await res.json();
+      console.log(data)
+      if (data.guestId) {
+        console.log(data.guestId);
+        setUserId(data.guestId);
 
-//         // Fetch balance with guestId
-//         const balanceRes = await fetch('/api/balance/get', {
-//           method: 'POST',
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ userId: data.guestId }),
-//         });
-//         const balanceData = await balanceRes.json();
-//         setBalance(balanceData.chips);
-//       }
-//     };
-//     initUser();
-//   }, []);
+        // Fetch balance with guestId
+        const balanceRes = await fetch('/api/balance/get', {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.guestId }),
+        });
+        const balanceData = await balanceRes.json();
+        setBalance(balanceData.chips);
+      }
+    };
+    initUser();
+  }, []);
 
   const handleBet = async (amount: number) => {
     if (balance >= amount && !gameStarted) {
@@ -222,6 +223,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
   if (currentStatus === "Win") payout = bet * 2;
   if (currentStatus === "Push") payout = bet;
 
+  console.log("USER ID", userId);
   if (payout > 0) {
     await fetch('/api/balance/update', {
       method: 'POST',
@@ -239,7 +241,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     method: 'POST',
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      userId,
+      userId: userId,
       bet,
       result: currentStatus,
       userScore: calculateHandValue(currentPlayerCards),
@@ -278,18 +280,38 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     setStatus('');
   };
 
-  const fetchGeminiRecommendation = async () => {
-    const res = await fetch("/api/recommendation", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        playerScore, 
-        dealerCard: dealerCards[0],
-      }),
-    });
+  // const fetchGeminiRecommendation = async () => {
+  //   const res = await fetch("/api/recommendation", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({
+  //       playerScore, 
+  //       dealerCard: dealerCards[0],
+  //     }),
+  //   });
 
-    const data = await res.json();
-    setRecommendedAction(data.recommendation);
+  //   const data = await res.json();
+  //   setRecommendedAction(data.recommendation);
+  // };
+  const fetchGeminiRecommendation = async () => {
+    setIsFetchingRecommendation(true);
+    try {
+      // your existing API logic
+      const res = await fetch("/api/recommendation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerScore, 
+          dealerCard: dealerCards[0],
+        }),
+      });
+      const data = await res.json();
+      setRecommendedAction(data.recommendation);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsFetchingRecommendation(false);
+    }
   };
 
 
@@ -365,13 +387,48 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     </div>
 
         {gameStarted && controlsVisible && (
-          <GameActions
-            onHit={handleHit}
-            onStand={handleStand}
-            onNewGame={handleNewGame}
-            isGameOver={!!status}
-          />
-        )}
+  <div className="flex justify-center gap-4 mt-6">
+    {gameOver ? (
+      <button
+        onClick={handleNewGame}
+        className="bg-yellow-500 text-black px-4 py-2 rounded font-semibold transition hover:brightness-110"
+      >
+        New Game
+      </button>
+    ) : (
+      <>
+        {/* Hit Button */}
+        <button
+          onClick={handleHit}
+          className="bg-white dark:bg-black text-black dark:text-white px-4 py-2 rounded font-medium border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+          Hit
+        </button>
+
+        {/* AI Recommendation Button */}
+        <button
+          onClick={fetchGeminiRecommendation}
+          className="relative flex items-center justify-center w-10 h-10 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          disabled={isFetchingRecommendation} // assumes you're tracking loading state
+        >
+          {isFetchingRecommendation ? (
+            <span className="w-5 h-5 border-2 border-t-transparent border-black dark:border-white rounded-full animate-spin" />
+          ) : (
+            "?"
+          )}
+        </button>
+
+        {/* Stand Button */}
+        <button
+          onClick={handleStand}
+          className="bg-white dark:bg-black text-black dark:text-white px-4 py-2 rounded font-medium border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+          Stand
+        </button>
+      </>
+    )}
+  </div>
+)}
 
 
       {!gameStarted && (
@@ -390,14 +447,14 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
         </div>
       )}
     
-    <div className="flex justify-center mt-4">
+    {/* <div className="flex justify-center mt-4">
           <button
             onClick={fetchGeminiRecommendation}
             className="w-40 py-3 bg-white text-black rounded hover:bg-gray-300 transition"
           >
             AI Recommendation
           </button>
-    </div>
+    </div> */}
     {recommendedAction && (
       <div className="text-center text-green-500 text-sm mt-2">
         AI Suggests: <strong>{recommendedAction}</strong>
