@@ -148,15 +148,19 @@ useEffect(() => {
 };
 
 const handleDealerTurn = async (currentPlayerCards: string[]) => {
+  setControlsVisible(false);
   // work with local copies so we don't rely on stale React state
   const currentDealerCards = [...dealerCards];
   let currentScore = calculateHandValue(currentDealerCards);
   // reveal hidden card
-  currentDealerCards[1] = getRandomCard();
-  currentScore = calculateHandValue(currentDealerCards);
-  setDealerCards(currentDealerCards);
-  setDealerScore(currentScore);
-  setDealerFlipped([true, true]); // reveal both dealer cards visually
+  setTimeout(() => {
+    currentDealerCards[1] = getRandomCard();
+    currentScore = calculateHandValue(currentDealerCards);
+    setDealerCards(currentDealerCards);
+    setDealerScore(currentScore);
+    setDealerFlipped([true, true]); // reveal both dealer cards visually
+  }, 500)
+  
 
   // simulate dealer hitting (16 or less)
   while (currentScore <= 16) {
@@ -170,7 +174,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
       setDealerScore(currentScore);
       setDealerFlipped([true, true, true]); // flip new card
       // console.log(flipped);
-    }, 500); // you can stagger multiple cards here with delays
+    }, 1000); // you can stagger multiple cards here with delays
   }
   const currentPlayerScore = calculateHandValue(currentPlayerCards)
   console.log("dealer score", currentScore, " player score", currentPlayerScore);
@@ -223,6 +227,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
       payout
     })
   });
+  setControlsVisible(true);
 }, 1000);
 };
 
@@ -364,7 +369,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     {gameOver ? (
       <button
         onClick={handleNewGame}
-        className="bg-yellow-500 text-black px-4 py-2 rounded font-semibold transition hover:brightness-110"
+        className="bg-white dark:bg-black text-black dark:text-white px-4 py-2 rounded font-medium border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
       >
         New Game
       </button>
@@ -381,7 +386,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
         {/* AI Recommendation Button */}
         <button
           onClick={fetchGeminiRecommendation}
-          className="relative flex items-center justify-center w-10 h-10 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          className="relative flex items-center justify-center w-10 h-10 rounded-full border transition bg-white dark:bg-black text-black dark:text-white border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
           disabled={isFetchingRecommendation} // assumes you're tracking loading state
         >
           {isFetchingRecommendation ? (
@@ -413,7 +418,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
         <div className="flex justify-center mt-4">
           <button
             onClick={startGame}
-            className="w-40 py-3 bg-white text-black rounded hover:bg-gray-300 transition"
+            className="bg-gray-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded font-medium border border-gray-300 dark:border-gray-700 hover:bg-gray-800 dark:hover:bg-gray-200 transition"
           >
             Place Bet
           </button>

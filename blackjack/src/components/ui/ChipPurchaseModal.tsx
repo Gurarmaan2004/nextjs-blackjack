@@ -13,20 +13,19 @@ export default function ChipPurchaseModal({
 
   const handlePurchase = async (amount: number) => {
     setBalance(balance + amount);
+    onClose(); // ⬅️ Close immediately
 
     // Optional: persist to backend
     await fetch("/api/balance/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
         userId: localStorage.getItem("guestId"),
         newBalance: balance + amount,
         reason: `Purchased ${amount} chips`,
-      }),
+        }),
     });
-
-    onClose(); // Optional: close after purchase
-  };
+    };
 
   return (
     <AnimatePresence>
