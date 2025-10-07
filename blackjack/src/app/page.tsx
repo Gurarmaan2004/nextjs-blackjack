@@ -66,7 +66,6 @@ useEffect(() => {
 
   const handleBet = async (amount: number) => {
     if (balance >= amount && !gameStarted) {
-      setBet(bet + amount);
       setBalance(balance - amount); // or however your logic computes it;
       console.log("balance set");
       // Backend: Log chip deduction
@@ -116,33 +115,9 @@ useEffect(() => {
 
 
 
-  // const startGame = () => {
-  //   const newPlayerCards = [getRandomCard(), getRandomCard()];
-  //   const newDealerCards = [getRandomCard(), getRandomCard()];
-
-  //   setPlayerCards(newPlayerCards);
-  //   setDealerCards(newDealerCards);
-
-
-  //   setGameStarted(true);
-  //     // Sequential flip animation
-  //   setTimeout(() => setFlipped([true, false, false, false]), 500);      // Player 1
-  //   setPlayerScore(calculateHandValue(playerCards.slice(0,1)))
-  //   setTimeout(() => setFlipped([true, true, false, false]), 1000);      // Dealer 1
-  //   setDealerScore(calculateHandValue(dealerCards.slice(0,1)))
-  //   setTimeout(() => setFlipped([true, true, true, false]), 1500);       // Player 2
-  //   setPlayerScore(calculateHandValue(dealerCards))
-  //   setTimeout(() => setControlsVisible(true), 2000);             // Show actions
-
-  //   console.log(playerCards)
-
-    
-  // };
-
   const startGame = () => {
   const newPlayerCards = [getRandomCard(), getRandomCard()];
   const newDealerCards = [getRandomCard(), getRandomCard()];
-
   handleBet(bet);
   setGameStarted(true);
   // Card 1: Player
@@ -222,7 +197,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
   if (currentStatus === "Win") payout = bet * 2;
   if (currentStatus === "Push") payout = bet;
 
-  console.log("USER ID", userId);
+  console.log("BAL", balance, "BET", bet, "PAYOUT", payout);
   if (payout > 0) {
     await fetch('/api/balance/update', {
       method: 'POST',
