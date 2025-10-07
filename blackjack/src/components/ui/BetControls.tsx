@@ -7,7 +7,7 @@ export default function BetControls({
 }: {
   bet: number;
   setBet: React.Dispatch<React.SetStateAction<number>>;
-  onPlaceBet: () => void;
+  onPlaceBet: (arg: number) => Promise<void>;
 }) {
   return (
     <div className="flex flex-col items-center gap-4 mt-4">

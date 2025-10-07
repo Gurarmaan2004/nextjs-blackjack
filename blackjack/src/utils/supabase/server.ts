@@ -13,6 +13,8 @@ export const createClient = (
   return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {

@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import BetControls from "../components/ui/BetControls";
 import Balance from "../components/ui/Balance";
-import Hand from "../components/ui/Hand";
-import GameTable from "../components/ui/GameTable";
+
 import PlayingCard from "../components/ui/PlayingCard";
 import PlayerLabel from "../components/ui/PlayerLabelProps";
 
@@ -317,7 +316,6 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
 
   return (
     <div className="p-6">
-      <Balance balance={balance} />
     <div className="flex flex-col items-center my-8">
   {/* Container for dealer cards */}
   <div className="relative w-[200px] h-[80px] mb-14">

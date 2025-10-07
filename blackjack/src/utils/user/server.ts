@@ -7,6 +7,8 @@ export const createClient = () => {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     { cookies: { get: cookieStore.get, set: cookieStore.set, remove: cookieStore.delete } }
   );
 };

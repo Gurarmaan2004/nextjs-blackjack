@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Missing userId' }, { status: 400 });
   }
-n
+
   // 🔹 Query User by ID
   const { data, error } = await supabase
     .from('User')
@@ -26,5 +26,5 @@ n
   }
 
   // 🔹 Return the chips value
-  return NextResponse.json({ success: true, chips: data.chips });
+  return NextResponse.json({ success: true, chips: data!.chips });
 }

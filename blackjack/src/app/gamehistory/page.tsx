@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import GameHistoryItem from '@/components/ui/GameHistoryItem';
 import { getPaginationRange } from '@/utils/pagination';
-import { useTheme } from 'next-themes'; // if using next-themes
 
 interface GameRecord {
   date: string;
