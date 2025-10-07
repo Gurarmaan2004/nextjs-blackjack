@@ -4,6 +4,7 @@ interface GameRecord {
   playerScore: number;
   dealerScore: number;
   result: string;
+  payout: number
 }
 
 export default function GameHistoryItem({ game }: { game: GameRecord }) {
@@ -15,7 +16,7 @@ export default function GameHistoryItem({ game }: { game: GameRecord }) {
     <div className="flex justify-between items-center bg-black border border-gray-700 p-4 rounded-lg">
       <div>
         <p className="text-sm text-gray-400">Date</p>
-        <p className="font-semibold">{new Date(game.date).toLocaleString()}</p>
+        <p className="font-semibold">{game.date}</p>
       </div>
       <div>
         <p className="text-sm text-gray-400">Bet</p>
@@ -29,7 +30,12 @@ export default function GameHistoryItem({ game }: { game: GameRecord }) {
       </div>
       <div>
         <p className="text-sm text-gray-400">Result</p>
-        <p className={`font-semibold ${resultColor}`}>{game.result}</p>
+        <p className={`font-semibold ${resultColor}`}>
+            {game.result}
+            {game.payout > 0 && (
+                <span className="text-green-500"> (+{game.payout})</span>
+            )}
+            </p>
       </div>
     </div>
   );
