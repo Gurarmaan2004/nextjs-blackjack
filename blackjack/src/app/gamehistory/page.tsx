@@ -38,14 +38,16 @@ export default function GameHistoryPage() {
         });
         const gameData = await gameRes.json();
         setHistory(
-          gameData.data.map((game: any) => ({
-            date: formatDate(game.createdAt),
-            playerScore: game.userScore,
-            dealerScore: game.dealerScore,
-            result: game.result,
-            payout: game.payout ?? 0,
-            bet: game.bet
-          }))
+          gameData.data
+            .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Newest first
+            .map((game: any) => ({
+              date: formatDate(game.createdAt),
+              playerScore: game.userScore,
+              dealerScore: game.dealerScore,
+              result: game.result,
+              payout: game.payout ?? 0,
+              bet: game.bet
+            }))
         );
       }
     };
