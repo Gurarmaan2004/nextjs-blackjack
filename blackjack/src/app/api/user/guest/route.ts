@@ -5,15 +5,16 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
   const cookieStore = await cookies();
-  let guestId = cookieStore.get("guestId")?.value;
+  let Id = cookieStore.get("guestId")?.value;
   const supabase = createClient(cookieStore);
 
-  if (!guestId) {
-    guestId = crypto.randomUUID();
-    cookieStore.set("guestId", guestId, {
+  if (!Id) {
+    Id = crypto.randomUUID();
+    cookieStore.set("guestId", Id, {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
+  const guestId: string = Id;
 
     const { error } = await supabase.from("User").insert({
       id: guestId,
@@ -25,6 +26,6 @@ export async function GET() {
       return NextResponse.json({ error: "Could not create guest" }, { status: 500 });
     }
   }
-
+  const guestId: string = Id;
   return NextResponse.json({ guestId });
 }

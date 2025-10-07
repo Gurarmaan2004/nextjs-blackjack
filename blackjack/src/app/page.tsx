@@ -10,6 +10,7 @@ import PlayerLabel from "../components/ui/PlayerLabelProps";
 
 import GameActions from "../components/ui/GameActions";
 // import {getOrCreateGuestId} from '../utils/user';
+import { useBalance } from "@/context/BalanceContext";
 
 import './globals.css'
 
@@ -19,7 +20,7 @@ import ActionButtons from "../components/ui/ActionButtons";
 // app/page.tsx or pages/index.tsx
 export default function HomePage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [balance, setBalance] = useState(250);
+  const { balance, setBalance } = useBalance(); // use from context only
   const [bet, setBet] = useState(0);
   
   // const [flipped, setFlipped] = useState([false, false, false, false]); // 4 cards
@@ -41,39 +42,40 @@ export default function HomePage() {
   // const userId = getOrCreateGuestId();
 
 
-useEffect(() => {
-    const initUser = async () => {
-      const res = await fetch('/api/user/guest');
-      const data = await res.json();
-      if (data.guestId) {
-        console.log(data.guestId);
-        setUserId(data.guestId);
+// useEffect(() => {
+//     const initUser = async () => {
+//       const res = await fetch('/api/user/guest');
+//       const data = await res.json();
+//       console.log(data)
+//       if (data.guestId) {
+//         console.log(data.guestId);
+//         setUserId(data.guestId);
 
-        // Fetch balance with guestId
-        const balanceRes = await fetch('/api/balance/get', {
-          method: 'POST',
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.guestId }),
-        });
-        const balanceData = await balanceRes.json();
-        setBalance(balanceData.chips);
-      }
-    };
+//         // Fetch balance with guestId
+//         const balanceRes = await fetch('/api/balance/get', {
+//           method: 'POST',
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ userId: data.guestId }),
+//         });
+//         const balanceData = await balanceRes.json();
+//         setBalance(balanceData.chips);
+//       }
+//     };
+//     initUser();
+//   }, []);
 
-    initUser();
-  }, []);
   const handleBet = async (amount: number) => {
     if (balance >= amount && !gameStarted) {
       setBet(bet + amount);
-      setBalance(balance - amount);
-
+      setBalance(balance - amount); // or however your logic computes it;
+      console.log("balance set");
       // Backend: Log chip deduction
       await fetch('/api/balance/update', {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: userId,  // Replace this with actual user ID from session/auth
-          delta: -amount,
+          newBalance: balance-amount,
           reason: "Bet Placed"
         })
       });
@@ -141,9 +143,8 @@ useEffect(() => {
   const newPlayerCards = [getRandomCard(), getRandomCard()];
   const newDealerCards = [getRandomCard(), getRandomCard()];
 
-
+  handleBet(bet);
   setGameStarted(true);
-
   // Card 1: Player
   setTimeout(() => {
     setPlayerCards([newPlayerCards[0], "Hidden"]);
@@ -200,54 +201,53 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
   console.log("dealer score", currentScore, " player score", currentPlayerScore);
   console.log(dealerFlipped);
   // once dealer stops hitting, decide outcome
-  setTimeout(() => {
-    if (currentScore > 21) {
-      setStatus("Win"); // dealer busts
-    } else if (currentPlayerScore > 21){
-      setStatus("Lose");
-    }else if (currentScore > currentPlayerScore) {
-      setStatus("Lose");
-    } else if (currentScore === currentPlayerScore) {
-      setStatus("Push");
-    } else {
-      setStatus("Win");
-    }
-    setGameOver(true);
+  let currentStatus = '';
+  setTimeout(async () => {
+  if (currentScore > 21) {
+    currentStatus = "Win";
+  } else if (currentPlayerScore > 21) {
+    currentStatus = "Lose";
+  } else if (currentScore > currentPlayerScore) {
+    currentStatus = "Lose";
+  } else if (currentScore === currentPlayerScore) {
+    currentStatus = "Push";
+  } else {
+    currentStatus = "Win";
   }
 
-  , 1000); // delay outcome until after animations finish
+  setStatus(currentStatus);
+  setGameOver(true);
 
-  // determine delta payout
   let payout = 0;
-  if (status === "Win") payout = bet * 2;
-  if (status === "Push") payout = bet;
+  if (currentStatus === "Win") payout = bet * 2;
+  if (currentStatus === "Push") payout = bet;
 
-  // Update balance if needed
   if (payout > 0) {
     await fetch('/api/balance/update', {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        userId: "mock-user-id",
-        delta: payout,
-        reason: status === "Push" ? "Push - Refund" : "Won Game"
+        userId: userId,
+        newBalance: balance + payout,
+        reason: currentStatus === "Push" ? "Push - Refund" : "Won Game"
       })
     });
-    setBalance(prev => prev + payout);
+    setBalance(balance + payout); // or however your logic computes it;
   }
 
-  // Save Game Result
   await fetch('/api/game/save', {
     method: 'POST',
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      userId: userId,
+      userId,
       bet,
-      result: status,
+      result: currentStatus,
       userScore: calculateHandValue(currentPlayerCards),
-      dealerScore: currentScore
+      dealerScore: currentScore,
+      payout
     })
   });
+}, 1000);
 };
 
 
@@ -375,7 +375,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
 
 
       {!gameStarted && (
-        <BetControls bet={bet} setBet={setBet} onPlaceBet={() => handleBet(bet)} />
+        <BetControls bet={bet} setBet={setBet} onPlaceBet={handleBet} />
       )}
 
 
