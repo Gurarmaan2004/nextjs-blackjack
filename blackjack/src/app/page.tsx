@@ -9,6 +9,8 @@ import PlayingCard from "../components/ui/PlayingCard";
 import PlayerLabel from "../components/ui/PlayerLabelProps";
 
 import GameActions from "../components/ui/GameActions";
+// import {getOrCreateGuestId} from '../utils/user';
+
 import './globals.css'
 
 // import ResultBanner from "../components/ui/ResultBanner";
@@ -16,10 +18,14 @@ import ActionButtons from "../components/ui/ActionButtons";
 
 // app/page.tsx or pages/index.tsx
 export default function HomePage() {
+  const [userId, setUserId] = useState<string | null>(null);
   const [balance, setBalance] = useState(250);
   const [bet, setBet] = useState(0);
   
-  const [flipped, setFlipped] = useState([false, false, false, false]); // 4 cards
+  // const [flipped, setFlipped] = useState([false, false, false, false]); // 4 cards
+
+  const [playerFlipped, setPlayerFlipped] = useState<boolean[]>([false, false]);
+  const [dealerFlipped, setDealerFlipped] = useState<boolean[]>([false, false]);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -28,37 +34,49 @@ export default function HomePage() {
   const [dealerCards, setDealerCards] = useState<string[]>(["Hidden", "Hidden"]);
   const [dealerScore, setDealerScore] = useState(0);
 
+  const [recommendedAction, setRecommendedAction] = useState<string | null>(null);
+
   const [status, setStatus] = useState('');
-  
 
-  useEffect(() => {
-    async function fetchBalance() {
-      const res = await fetch('/api/balance/get', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: "mock-user-id" })
-      });
+  // const userId = getOrCreateGuestId();
+
+
+useEffect(() => {
+    const initUser = async () => {
+      const res = await fetch('/api/user/guest');
       const data = await res.json();
-      setBalance(data.balance);
-    }
+      if (data.guestId) {
+        console.log(data.guestId);
+        setUserId(data.guestId);
 
-    fetchBalance();
+        // Fetch balance with guestId
+        const balanceRes = await fetch('/api/balance/get', {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.guestId }),
+        });
+        const balanceData = await balanceRes.json();
+        setBalance(balanceData.chips);
+      }
+    };
+
+    initUser();
   }, []);
   const handleBet = async (amount: number) => {
-  if (balance >= amount && !gameStarted) {
-    setBet(bet + amount);
-    setBalance(balance - amount);
+    if (balance >= amount && !gameStarted) {
+      setBet(bet + amount);
+      setBalance(balance - amount);
 
-    // Backend: Log chip deduction
-    await fetch('/api/balance/update', {
-      method: 'POST',
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: "mock-user-id",  // Replace this with actual user ID from session/auth
-        delta: -amount,
-        reason: "Bet Placed"
-      })
-    });
+      // Backend: Log chip deduction
+      await fetch('/api/balance/update', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,  // Replace this with actual user ID from session/auth
+          delta: -amount,
+          reason: "Bet Placed"
+        })
+      });
   }
 };
 
@@ -130,21 +148,21 @@ export default function HomePage() {
   setTimeout(() => {
     setPlayerCards([newPlayerCards[0], "Hidden"]);
     setPlayerScore(calculateHandValue([newPlayerCards[0]]));
-    setFlipped([true, false, false, false]);
+    setPlayerFlipped([true, false]);
   }, 500);
 
   // Card 1: Dealer
   setTimeout(() => {
     setDealerCards(newDealerCards);
     setDealerScore(calculateHandValue([newDealerCards[0]]));
-    setFlipped([true, true, false, false]);
+    setDealerFlipped([true, false]);
   }, 1000);
 
   // Card 2: Player
   setTimeout(() => {
     setPlayerCards([newPlayerCards[0], newPlayerCards[1]]);
     setPlayerScore(calculateHandValue(newPlayerCards));
-    setFlipped([true, true, true, false]);
+    setPlayerFlipped([true, true]);
   }, 1500);
 
   // Finally show hit/stand controls
@@ -155,37 +173,41 @@ export default function HomePage() {
 
 const handleDealerTurn = async (currentPlayerCards: string[]) => {
   // work with local copies so we don't rely on stale React state
-  let currentDealerCards = [...dealerCards];
+  const currentDealerCards = [...dealerCards];
   let currentScore = calculateHandValue(currentDealerCards);
   // reveal hidden card
   currentDealerCards[1] = getRandomCard();
   currentScore = calculateHandValue(currentDealerCards);
   setDealerCards(currentDealerCards);
   setDealerScore(currentScore);
-  setFlipped([true, true, true, true]); // reveal both dealer cards visually
+  setDealerFlipped([true, true]); // reveal both dealer cards visually
 
   // simulate dealer hitting (16 or less)
   while (currentScore <= 16) {
     const newCard = getRandomCard();
-    currentDealerCards = [...currentDealerCards, newCard];
-    currentScore = calculateHandValue(currentDealerCards);
+    const thirdDealerCards = [...currentDealerCards, newCard];
+    currentScore = calculateHandValue(thirdDealerCards);
 
     // update UI incrementally
     setTimeout(() => {
-      setDealerCards(currentDealerCards);
+      setDealerCards(thirdDealerCards);
       setDealerScore(currentScore);
-      setFlipped(prev => [...prev, true]); // flip new card
+      setDealerFlipped([true, true, true]); // flip new card
+      // console.log(flipped);
     }, 500); // you can stagger multiple cards here with delays
   }
   const currentPlayerScore = calculateHandValue(currentPlayerCards)
   console.log("dealer score", currentScore, " player score", currentPlayerScore);
+  console.log(dealerFlipped);
   // once dealer stops hitting, decide outcome
   setTimeout(() => {
     if (currentScore > 21) {
       setStatus("Win"); // dealer busts
-    } else if (currentScore > playerScore) {
+    } else if (currentPlayerScore > 21){
       setStatus("Lose");
-    } else if (currentScore === playerScore) {
+    }else if (currentScore > currentPlayerScore) {
+      setStatus("Lose");
+    } else if (currentScore === currentPlayerScore) {
       setStatus("Push");
     } else {
       setStatus("Win");
@@ -219,15 +241,11 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     method: 'POST',
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      userId: "mock-user-id",
+      userId: userId,
       bet,
       result: status,
       userScore: calculateHandValue(currentPlayerCards),
-      dealerScore: currentScore,
-      finalState: {
-        playerCards: currentPlayerCards,
-        dealerCards
-      }
+      dealerScore: currentScore
     })
   });
 };
@@ -238,11 +256,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     setPlayerCards(newPlayerCards)
 
     setPlayerScore(calculateHandValue(newPlayerCards));
-    setFlipped([...flipped, true]);
-    if(calculateHandValue(playerCards) > 21){
-      setStatus('Win!');
-      handleNewGame()
-    }
+    setPlayerFlipped([...playerFlipped, true]);
 
     await handleDealerTurn(newPlayerCards)
   };
@@ -255,12 +269,27 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     setBet(0);
     setGameOver(false);
     setGameStarted(false);
-    setPlayerCards([]);
-    setDealerCards([]);
+    setPlayerCards(["", ""]);
+    setDealerCards(["", ""]);
     setDealerScore(0);
     setPlayerScore(0);
-    setFlipped([false, false, false, false])
+    setPlayerFlipped([false, false])
+    setDealerFlipped([false, false])
     setStatus('');
+  };
+
+  const fetchGeminiRecommendation = async () => {
+    const res = await fetch("/api/recommendation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        playerScore, 
+        dealerCard: dealerCards[0],
+      }),
+    });
+
+    const data = await res.json();
+    setRecommendedAction(data.recommendation);
   };
 
 
@@ -270,7 +299,9 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
     <div className="flex flex-col items-center my-8">
   {/* Container for dealer cards */}
   <div className="relative w-[200px] h-[80px] mb-14">
-    {dealerCards.map((card, idx) => {
+    {
+    dealerCards.map((card, idx) => {
+      console.log(dealerCards)
       const baseClass = "absolute transition-all duration-300";
 
       // Logic for positioning cards
@@ -287,7 +318,7 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
 
       return (
         <div key={idx} className={`${baseClass} ${positionStyle}`}>
-          <PlayingCard value={card} flipped={flipped[idx * 2 + 1]} />
+          <PlayingCard value={card} flipped={dealerFlipped[idx]} />
         </div>
       );
     })}
@@ -318,10 +349,10 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
             if (idx === 1) positionStyle = `left-[50%] translate-x-[-50%]`; // second
             if (idx === 2) positionStyle = `left-[100%] translate-x-[-50%]`; // third
           }
-          console.log("Rendering player card:", idx, card, flipped[idx * 2]);
+          //console.log("Rendering player card:", idx, card, flipped[idx * 2]);
           return (
             <div key={idx} className={`${baseClass} ${positionStyle}`}>
-              <PlayingCard value={card} flipped={flipped[idx * 2]} />
+              <PlayingCard value={card} flipped={playerFlipped[idx]} />
             </div>
           );
         })}
@@ -358,6 +389,20 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
           </button>
         </div>
       )}
+    
+    <div className="flex justify-center mt-4">
+          <button
+            onClick={fetchGeminiRecommendation}
+            className="w-40 py-3 bg-white text-black rounded hover:bg-gray-300 transition"
+          >
+            AI Recommendation
+          </button>
+    </div>
+    {recommendedAction && (
+      <div className="text-center text-green-500 text-sm mt-2">
+        AI Suggests: <strong>{recommendedAction}</strong>
+      </div>
+    )}
     </div>
   );
 }

@@ -23,10 +23,9 @@ model Game {
   id          String     @id @default(cuid())
   userId      String
   bet         Int
-  result      GameResult
+  result      String
   userScore   Int
   dealerScore Int
-  finalState  Json
   createdAt   DateTime   @default(now())
   user        User       @relation(fields: [userId], references: [id])
 }
@@ -40,9 +39,3 @@ model ChipTransaction {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-enum GameResult {
-  Win
-  Lose
-  Push
-  Blackjack
-}

@@ -1,23 +1,30 @@
-console.log("🧪 DATABASE_URL:"); // Add this here
-
-
+// src/app/api/game/save/route.ts
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
 
 export async function POST(req: Request) {
-  const { userId, bet, result, userScore, dealerScore, finalState } = await req.json();
+  const { userId, bet, result, userScore, dealerScore } = await req.json();
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
 
-  const game = await prisma.game.create({
-    data: {
-      userId,
-      bet,
-      result,
-      userScore,
-      dealerScore,
-      finalState, // pass an object with full round state if needed
-    },
-  });
+  const { data, error } = await supabase
+    .from('Game')
+    .insert([
+      {
+        userId,
+        bet,
+        result,
+        userScore,
+        dealerScore,
+      },
+    ])
+    .select();
 
-  return NextResponse.json({ success: true, game });
+  if (error) {
+    console.error("Supabase insert error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, game: data[0] });
 }
