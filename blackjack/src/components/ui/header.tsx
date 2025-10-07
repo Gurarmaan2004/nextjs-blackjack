@@ -19,10 +19,12 @@ export default function Header() {
         <h1 className="text-2xl font-bold">Blackjack</h1>
         <div className="flex items-center bg-gray-800 px-3 py-1 rounded-full">
           <p>🪙 {balance}</p>
-            <button onClick={() => setShowModal(true)} className="ml-2 font-bold text-lg">
+            <button
+            onClick={() => setShowModal(true)}
+            className="ml-2 font-bold text-lg transition-transform duration-200 hover:scale-125 hover:text-yellow-400 dark:hover:text-yellow-300"
+            >
             +
-          </button>
-          <button className="ml-2 text-white font-bold">+</button>
+            </button>
         </div>
       </div>
       <nav className="flex items-center gap-6 text-sm">

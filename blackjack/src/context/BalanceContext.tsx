@@ -74,47 +74,56 @@ type BalanceContextType = {
 const BalanceContext = createContext<BalanceContextType | undefined>(undefined);
 
 export const BalanceProvider = ({ children }: { children: React.ReactNode }) => {
-  const [balance, setBalance] = useState<number>(250); // start with default
+  const [balance, setBalance] = useState<number>(0); // start with default
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // This only runs in the browser
+    useEffect(() => {
     const initUser = async () => {
-      let guestId = localStorage.getItem("guestId");
+        let guestId = localStorage.getItem("guestId");
 
-      if (!guestId) {
-        // fetch guestId from server
+        if (!guestId) {
         const res = await fetch("/api/user/guest");
         const data = await res.json();
-        const newGuestId: string = data.guestId;
-        localStorage.setItem("guestId", newGuestId);
-      }
+        guestId = data.guestId;
+        if(guestId){
+            localStorage.setItem("guestId", guestId);
+        }
+        }
 
-      setUserId(guestId);
+        setUserId(guestId); // ✅ Only call after guestId is confirmed
 
-      // Fetch balance from server
-      const balanceRes = await fetch("/api/balance/get", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: guestId }),
-      });
-      const balanceData = await balanceRes.json();
-      if (balance !== undefined){
-        setBalance(balanceData.chips);
-      }
+        // ✅ Only fetch if balance not already stored
+        const storedBalance = localStorage.getItem("balance");
+        if (!storedBalance) {
+        const balanceRes = await fetch("/api/balance/get", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: guestId }),
+        });
 
-      // store in localStorage for next reload
-      localStorage.setItem("balance", balanceData.chips);
+        const balanceData = await balanceRes.json();
+        if (balanceData?.chips !== undefined) {
+            setBalance(balanceData.chips);
+            localStorage.setItem("balance", balanceData.chips.toString());
+        }
+        } else {
+        setBalance(parseInt(storedBalance, 10));
+        }
     };
 
-    initUser();
-  }, []);
+    if (typeof window !== "undefined") {
+        initUser();
+    }
+    }, []);
+
 
     useEffect(() => {
     if (typeof window !== "undefined" && typeof balance === "number") {
         localStorage.setItem("balance", balance.toString());
     }
     }, [balance]);
+
+
   return (
     <BalanceContext.Provider value={{ balance, setBalance }}>
       {children}
