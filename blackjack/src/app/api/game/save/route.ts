@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   const { userId, bet, result, userScore, dealerScore, payout } = await req.json();
   console.log(userId);
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   const { data, error } = await supabase

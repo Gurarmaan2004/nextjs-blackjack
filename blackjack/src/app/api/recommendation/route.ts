@@ -26,10 +26,11 @@ Respond only with the word: Hit or Stand followed by a very brief (<10 word) exp
       model: 'gemini-2.5-flash',   // choose a valid model name per Gemini docs :contentReference[oaicite:2]{index=2}
       contents: prompt,
     });
+    if(response.text){
+        const recommendation = response.text.trim(); // SDK returns `.text`
+        return NextResponse.json({ recommendation });
+    }
 
-    const recommendation = response.text.trim(); // SDK returns `.text`
-
-    return NextResponse.json({ recommendation });
   } catch (err: any) {
     console.error("Gemini SDK error:", err);
     return NextResponse.json({ error: err.message || "Failed to get recommendation" }, { status: 500 });

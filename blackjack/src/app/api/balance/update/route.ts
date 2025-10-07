@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   const { userId, newBalance, reason } = await req.json();
   console.log(newBalance, "new balance")
-  const cookieStore = await cookies(); // ✅ await it
+  const cookieStore = cookies(); // ✅ await it
 
   const supabase = createClient(cookieStore);
   
