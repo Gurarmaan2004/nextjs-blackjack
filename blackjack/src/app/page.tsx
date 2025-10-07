@@ -428,15 +428,6 @@ const handleDealerTurn = async (currentPlayerCards: string[]) => {
           </button>
         </div>
       )}
-    
-    {/* <div className="flex justify-center mt-4">
-          <button
-            onClick={fetchGeminiRecommendation}
-            className="w-40 py-3 bg-white text-black rounded hover:bg-gray-300 transition"
-          >
-            AI Recommendation
-          </button>
-    </div> */}
     {recommendedAction && (
       <div className="text-center text-green-500 text-sm mt-2">
         AI Suggests: <strong>{recommendedAction}</strong>
